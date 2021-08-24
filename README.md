@@ -46,7 +46,7 @@ In this stage, you will need to connect your express app with your Mongo DB and 
 
 
 #### Stage 4 (100 Points)
-In the `controllers/store.js`, fill in the controllers for login, logout and user registration. You will also need to create basic frontend view for these in `views/`. Refer to the existing ejs templates if you have any issue. Also fill in the isLoggedIn function in `middleware/index.js`.
+In the `controllers/auth.js`, fill in the controllers for login, logout and user registration. You will also need to create basic frontend view for these in `views/`. Refer to the existing ejs templates if you have any issue. Also fill in the isLoggedIn function in `middleware/index.js`.
 
 ## Deadline
 You'll have a week to complete this task. Hence, the deadline of this task is 22nd July, 2021.
