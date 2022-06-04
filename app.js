@@ -6,9 +6,17 @@ var auth = require("./controllers/auth");
 var store = require("./controllers/store");
 var User = require("./models/user");
 var localStrategy = require("passport-local");
+var MongoURI = require('./Config/db').MongoURI;
+/* TODO: CONNECT MONGOOSE WITH OUR MONGO DB  */
+mongoose.connect(MongoURI,{useNewUrlParser:true,useUnifiedTopology:true,useCreateIndex:true})
+  .then(()=> {
+    console.log("Connected to Database");
+  })
+  .catch(err=>console.log(err));
 //importing the middleware object to use its functions
 var middleware = require("./middleware"); //no need of writing index.js as directory always calls index.js by default
-var port = process.env.PORT || 3000;
+
+var port = process.env.PORT || 8000;
 
 app.use(express.static("public"));
 
@@ -17,17 +25,21 @@ app.use(
   require("express-session")({
     secret: "decryptionkey", //This is the secret used to sign the session ID cookie.
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
   })
 );
 
+require('./passport')(passport);
 app.use(passport.initialize()); //middleware that initialises Passport.
 app.use(passport.session());
-passport.use(new localStrategy(User.authenticate())); //used to authenticate User model with passport
-passport.serializeUser(User.serializeUser()); //used to serialize the user for the session
-passport.deserializeUser(User.deserializeUser()); // used to deserialize the user
+// passport.use(new localStrategy(User.authenticate())); //used to authenticate User model with passport
+// passport.serializeUser(User.serializeUser()); //used to serialize the user for the session
+// passport.deserializeUser(User.deserializeUser()); // used to deserialize the user
 
-app.use(express.urlencoded({ extended: true })); //parses incoming url encoded data from forms to json objects
+app.use(express.urlencoded({ extended: false })); //parses incoming url encoded data from forms to json objects
+
+// EJS
+
 app.set("view engine", "ejs");
 
 //THIS MIDDLEWARE ALLOWS US TO ACCESS THE LOGGED IN USER AS currentUser in all views
@@ -36,10 +48,10 @@ app.use(function (req, res, next) {
   next();
 });
 
-/* TODO: CONNECT MONGOOSE WITH OUR MONGO DB  */
 
-app.get("/", (req, res) => {
-  res.render("index", { title: "Library" });
+
+app.get("/",middleware.isLoggedIn, (req, res) => {
+  res.render('index', {title:"Library"});
 });
 
 /*-----------------Store ROUTES
@@ -70,11 +82,14 @@ If you need to add any new route add it here and define its controller
 controllers folder.
 */
 
-app.get("/login", auth.getLogin);
+app.get("/login",middleware.stillLoggedIn, auth.getLogin);
 
-app.post("/login", auth.postLogin);
+app.post("/login",passport.authenticate('local',{
+  failureRedirect:'/login',
+  successRedirect:'/',  
+}), auth.postLogin);
 
-app.get("/register", auth.getRegister);
+app.get("/register",middleware.stillLoggedIn, auth.getRegister);
 
 app.post("/register", auth.postRegister);
 
