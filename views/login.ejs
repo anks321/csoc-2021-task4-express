@@ -1,7 +1,7 @@
 <h1>Login</h1>
-<% if(typeof mssg != 'undefined') {%>
-   <%= mssg %>
-<%  } %>
+<% for(let i = 0; i < errors.length;i++){ %>
+    <li><%= errors[i]%></li>
+    <%}%>
 <form method="POST" action="/login">
     
     <div>

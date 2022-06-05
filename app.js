@@ -2,13 +2,14 @@ const express = require("express");
 const app = express();
 var mongoose = require("mongoose");
 var passport = require("passport");
+var flash = require("connect-flash");
 var auth = require("./controllers/auth");
 var store = require("./controllers/store");
 var User = require("./models/user");
 var localStrategy = require("passport-local");
 var MongoURI = require('./Config/db').MongoURI;
 /* TODO: CONNECT MONGOOSE WITH OUR MONGO DB  */
-mongoose.connect(MongoURI,{useNewUrlParser:true,useUnifiedTopology:true,useCreateIndex:true})
+mongoose.connect(MongoURI,{useNewUrlParser:true,useUnifiedTopology:true,useCreateIndex:true,useFindAndModify: false})
   .then(()=> {
     console.log("Connected to Database");
   })
@@ -19,7 +20,7 @@ var middleware = require("./middleware"); //no need of writing index.js as direc
 var port = process.env.PORT || 8000;
 
 app.use(express.static("public"));
-
+app.use(flash());
 /*  CONFIGURE WITH PASSPORT */
 app.use(
   require("express-session")({
@@ -60,13 +61,18 @@ If you need to add any new route add it here and define its controller
 controllers folder.
 */
 
-app.get("/books", store.getAllBooks);
+app.get("/books",middleware.isLoggedIn, store.getAllBooks);
 
-app.get("/book/:id", store.getBook);
+app.get("/book/:id",middleware.isLoggedIn, store.getBook);
 
 app.get("/books/loaned",
+middleware.isLoggedIn,
 //TODO: call a function from middleware object to check if logged in (use the middleware object imported)
  store.getLoanedBooks);
+app.post("/books/loaned",
+middleware.isLoggedIn,
+ //TODO: call a function from middleware object to check if logged in (use the middleware object imported)
+store.returnLoanedBooks);
 
 app.post("/books/issue", 
 //TODO: call a function from middleware object to check if logged in (use the middleware object imported)
@@ -85,6 +91,7 @@ controllers folder.
 app.get("/login",middleware.stillLoggedIn, auth.getLogin);
 
 app.post("/login",passport.authenticate('local',{
+  failureFlash:true,
   failureRedirect:'/login',
   successRedirect:'/',  
 }), auth.postLogin);

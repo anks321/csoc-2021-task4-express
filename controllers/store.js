@@ -1,35 +1,32 @@
 var Books=require('../models/book');
-const bookCopy = require('../models/bookCopy');
-var bookCoppies = require('../models/bookCopy')
-var getAllBooks = (req, res) => {
+var bookCopy = require('../models/bookCopy');
+var User=require('../models/user');
+var getAllBooks = async (req, res) => {
 
     //TODO: access all books from the book model and render book list page
-    Books.find({},function(err,docs){
-        if(err){
-            res.status(500).send("erroe");
-        }
-        else{
-            
-            res.render("book_list", { books:docs , title: "Books | Library" });
-        }
-    })
+    const books=await Books.find({});
+    res.render('book_list',{books,title:"Books | Library"});
     
 }
 
-var getBook = (req, res) => {
+var getBook = async (req, res) => {
     //TODO: access the book with a given id and render book detail page
     const id = req.params.id;
-    Books.findById(id,(err, book) => {
-        if(err) {console.log(err);}
-        else{
-            res.render("book_detail",{book:book,num_available:book.availaible_copies.length,title: "Details" });
-        }
-    })
+    const book = await Books.findById(id).populate("availaible_copies");
+    var mssg=req.flash().mssg || '';
+    
+    res.render("book_detail", { book, title: "Book Detail",num_available: book.availaible_copies.length,mssg});
+    
 }
 
-var getLoanedBooks = (req, res) => {
+var getLoanedBooks =  async (req, res) => {
 
     //TODO: access the books loaned for this user and render loaned books page
+   
+    const username = req.user.username;
+    const user = await User.findOne({ username: username}).populate({path:'loaned_books',populate:{path:'book'}});
+    res.render( 'loaned_books', {books:user.loaned_books,title:"Loaned Books"})
+
 }
 
 var issueBook = (req, res) => {
@@ -38,29 +35,61 @@ var issueBook = (req, res) => {
     // return with appropriate status
     // Optionally redirect to page or display on same
     var bookId=req.body.bid;
-    bookCoppies.find({book:bookId},(err,doc)=>{
-        if(err){console.log(err);}
+    
+    User.findOne({username:req.user.username})
+    .then(user=>{
+
+        var userId=user.id;
+        var query={book:bookId,status:true}
+        var newData={book:bookId,status:false,borrow_date:Date.now(),borrower:userId};
+        bookCopy.findOneAndUpdate(query,newData,function(err,result){
+            if(err){res.send(err);}
+            else{
+                if(result){
+                User.findOneAndUpdate({username:req.user.username},{$push:{loaned_books:[result._id]}},function(err,result){
+                    if(err){res.send(err);}
+                    else{
+                        req.flash('mssg','You have successfully borrowed this book');
+                        res.redirect(`/book/${bookId}`);
+                    }
+                })}
+                else{
+                    req.flash('mssg','No copy of this title is availaible');
+                    res.redirect(`/book/${bookId}`);
+                }
+            }
+            
+        })
         
+
     })
+    .catch(err => {res.send(err);})
+    
+           
+    
+}
+var returnLoanedBooks = async(req, res)=>{
+    const copyId=req.body.bid;
+    await Promise.all([
+        User.findOneAndUpdate({username:req.user.username},{$pullAll :{loaned_books:[{_id:copyId}]}}).exec(),
+        bookCopy.findByIdAndUpdate(copyId,{status:true,borrower:null,borrow_date:null}).exec()
+
+    ])
+    res.redirect('/books/loaned');
+    
 }
 
-var searchBooks = (req, res) => {
+var searchBooks = async (req, res) => {
     // TODO: extract search details
     // query book model on these details
     // render page with the above details
     var {title,author,genre}=req.body;
-    Books.find().or([{title:title},{author:author},{genre:genre}])
-        .then(books=>{
-            if(!books){
-                res.render("book_list", { books: [], title: "Books | Library" });
-            }
-            else{
-                res.render("book_list", { books: books, title: "Books | Library" });
-            }
-        })
-        .catch(err=>{
-            console.log(err);
-        })
+    const books = await Books.find({
+        title: RegExp(title, "i"),
+        author: RegExp(author, "i"),
+        genre: RegExp(genre, "i")
+      });
+      res.render("book_list", { books, title: "Books | Library" ,bookinfo: {title: title, author: author,genre: genre }});
 
 }
 
@@ -69,5 +98,6 @@ module.exports = {
     getBook,
     getLoanedBooks,
     issueBook,
-    searchBooks
+    searchBooks,
+    returnLoanedBooks
 }

@@ -2,7 +2,8 @@ var User = require("../models/user");
 var passport = require("passport")
 var getLogin = (req, res) => {
   //TODO: render login page
-  res.render('login');
+  var errors=req.flash().error || [];
+  res.render('login',{errors});
 };
 
 var postLogin = (req, res) => {

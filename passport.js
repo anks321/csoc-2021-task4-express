@@ -7,7 +7,7 @@ module.exports=function(passport){
     passport.deserializeUser(function(user,done){
         done(null,user);
     })
-    passport.use(new localStrategy(function(username,password,done){
+    passport.use(new localStrategy({passReqToCallback:true},function(req,username,password,done){
         User.findOne({username:username},function(err,doc){
             if(err){
                 done(err);
@@ -24,11 +24,11 @@ module.exports=function(passport){
                         })
                     }
                     else{
-                        done(null,false)
+                        done(null,false,req.flash('error','Incorrect Password'))
                     }
                 }
                 else{
-                    done(null,false)
+                    done(null,false,req.flash('error','No such username exists'))
                 }
             }
         })

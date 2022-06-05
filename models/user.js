@@ -1,6 +1,7 @@
 var mongoose=require("mongoose");
 var passport=require("passport")
 var bcrypt = require("bcrypt-nodejs")
+const BookCopy = require("./bookCopy");
 //DEFINING THE USER MODEL
 var userSchema=new mongoose.Schema({
 
@@ -19,7 +20,7 @@ var userSchema=new mongoose.Schema({
     loaned_books:[
         {
             type:mongoose.Schema.Types.ObjectId,
-            ref:'books'
+            ref:'Bookcopy'
         }
         //TODO: embed reference to id's of book copies loaned by this particular user in this array
     ]

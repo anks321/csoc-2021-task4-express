@@ -10,13 +10,13 @@
 
           <form class="row" action="/books/search-book" method="POST">
             <div class="col-sm-3">
-              Title: <input type="text" name="title" id="title" />
+              Title: <input type="text" name="title" value="<%= typeof bookinfo != 'undefined' ? bookinfo.title : '' %>" id="title" />
             </div>
             <div class="col-sm-3">
-              Author: <input type="text" name="author" id="author" />
+              Author: <input type="text" name="author" value="<%= typeof bookinfo != 'undefined' ? bookinfo.author : '' %>" id="author" />
             </div>
             <div class="col-sm-3">
-              Genre: <input type="text" name="genre" id="genre" />
+              Genre: <input type="text" name="genre" value="<%= typeof bookinfo != 'undefined' ? bookinfo.genre : '' %>" id="genre" />
             </div>
             <div class="col-sm-12 pt-2">
               <button id="search_button" class="btn btn-primary" type="submit">
@@ -25,6 +25,11 @@
             </div>
           </form>
 
+          <% if(books.length===0) {%>
+                <h3>No such book found</h3>
+            <% } %>
+            <% if(books.length!==0) {%>
+          
           <table class="table">
             <thead>
               <tr>
@@ -39,14 +44,14 @@
             <tbody>
               <% books.forEach(function(book,i){%>
               <tr>
-                <th scope="row"><%=i %></th>
+                <th scope="row"><%=i+1 %></th>
                 <td><a href="/book/<%=book.id%>/"><%= book.title %></a></td>
                 <td><%=book.author%></td>
                 <td><%=book.genre%></td>
                 <td><%=book.rating%></td>
                 <td><%=book.mrp%></td>
               </tr>
-              <%})%>
+              <%})}%>
             </tbody>
           </table>
         </div>
